@@ -8,7 +8,6 @@ c requires encoded process ID in lprup(1)
       subroutine init_couplings
         implicit none
 #include "PhysPars.h"
-#include "nlegborn.h"
         ! final state IDs
         integer id_fin1, id_fin2
         logical verbose

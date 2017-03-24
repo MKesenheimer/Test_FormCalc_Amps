@@ -22,7 +22,7 @@ ClearProcess[]
 time1 = SessionTime[]
 
 
-(*You can now load the script with the command $ MathKernel -script spinsum.m "ubar" "u" "ubar" "u"*)
+(*You can now load the script with the command $ MathKernel -script Born2.m "ubar" "u" "ubar" "u"*)
 Print[$CommandLine]
 If[$CommandLine[[2]] === "-script",
 	(p[1] = ToString[$CommandLine[[4]]];
@@ -90,18 +90,23 @@ Print[process]
 
 
 (*Neglect Masses (URL)*)
-Neglect[ME] = Neglect[ME2] = 0;
-(*Neglect[MQU] = Neglect[MQD] = 0;*)
 Neglect[MU] = Neglect[MU2] = 0;
 Neglect[MC] = Neglect[MC2] = 0;
-(*Neglect[MT] = Neglect[MT2] = 0;*)
 Neglect[MD] = Neglect[MD2] = 0;
 Neglect[MS] = Neglect[MS2] = 0;
-(*Neglect[MB] = Neglect[MB2] = 0;*)
+Neglect[MUC] = Neglect[MU2C] = 0;
+Neglect[MCC] = Neglect[MC2C] = 0;
+Neglect[MDC] = Neglect[MD2C] = 0;
+Neglect[MSC] = Neglect[MS2C] = 0;
+Neglect[_Mf] = Neglect[_Mf2] = 0;
+Neglect[_MfC] = Neglect[_Mf2C] = 0;
+(*Neglect[MB] = Neglect[MB2] = 0;
+Neglect[MT] = Neglect[MT2] = 0;*)
 
-(*Diagonale CKM Matrix*)
-CKM = IndexDelta;
-CKMC = IndexDelta;
+(*particle widths*)
+widths = {MGl2 -> MGl2 - I MGl WGl, MSf2[a] :> MSf2[a] - I MSf[a] WSf[a], MZ2 -> MZ2 - I MZ WZ, MW2 -> WZ2 - I WZ WW};
+(*real widths*)
+Scan[ (RealQ[#] = True)&, {WGl, _WSf, WW, WZ}];
 
 
 (*Options*)
@@ -139,8 +144,6 @@ Print["amp = "];
 Print[amp//InputForm];
 
 ampB = CalcFeynAmp[amp, FermionChains -> Chiral];
-(*insert the partice widths*)
-widths={MZ2->MZ2-I WZ MZ, MW2->MW2-I WW MW, MSf2[sfe_,n1_,n2_]:>MSf2[sfe,n1,n2]-I WSf[sfe,n1,n2] MSf[sfe,n1,n2], MGl2->MGl2-I MGl WGl};
 ampB = ampB/.{Den[x_,y_]:>Den[x,y/.widths]};
 Print["ampB = "];
 Print[ampB//InputForm];
@@ -149,39 +152,24 @@ Print[ampB//InputForm];
 Legs = {1, 2, 3, 4};
 LegsToSum = Complement[Legs, GluonLegs];
 Print["Summing over legs "<>ToString[LegsToSum]];
-born = PolarizationSum2[ampB, SumLegs -> LegsToSum, GaugeTerms -> False];
+born = PolarizationSum2[ampB, SumLegs -> Legs, GaugeTerms -> False];
+
 Print["born = "];
 Print[born];
-full = PolarizationSum2[born, SumLegs -> GluonLegs, GaugeTerms -> False, RetainFile -> False];
-Print["full = "];
-Print[full];
-
-(*carry out the spin correlated sum and store the result in variables called spinsum`i'*)
-Do[
-  Pair[eta[i], eta[i]] = 0;
-  spinsum[i] = SpinCorrelatedSum[born, SumLegs -> {i}, GaugeTerms -> False, RetainFile -> False];
-  Print["spinsum["<>ToString[i]<>"] = "];
-  Print[spinsum[i]];,
-  {i, GluonLegs}
-]
 
 
 (*Write files*)
 Print["Writing files..."]
-amps = {born, full};
-{born, full} = Abbreviate[amps, 6, Preprocess -> OnSize[100, Simplify, 500, DenCollect]];
+amps = {born};
+{born} = Abbreviate[amps, 6, Preprocess -> OnSize[100, Simplify, 500, DenCollect]];
 col = ColourME[All, born];
 abbr = OptimizeAbbr[Abbr[]];
 subexpr = OptimizeAbbr[Subexpr[]];
 subexprc = ConjugateRule[subexpr];
 rules = Join[abbr,subexpr,subexprc];
 
-(*Write spin correlated amplitude and only necessary rules*)
-Do[
-  (*optimize the rules and write out*)
-  optimizedRules[i] = LoopRemove[spinsum[i],rules];,
-  {i, GluonLegs}
-]
+(*optimize the rules and write out*)
+optimizedRules = LoopRemove[born,rules];
 
 
 (*Preferences*)
@@ -195,8 +183,7 @@ $Assumptions=Element[S,Reals]&&Element[S34,Reals]&&Element[T,Reals]&&
 indices={Sfe6->2,Sfe6c->2};
 functions={Pair->DotP,k[1]->k1,k[2]->k2,k[3]->k3,k[4]->k4,k[5]->k5, IndexDelta->Kronecker,Eps->Epsilon,Conjugate[WSf[i_,j_,k_]]:>WSf[i,j,k],Conjugate[WZ]->WZ, I->ii,-I->-ii};
 
-
-WriteSpinCorrelatedMatrixElement["bmunu_"<>name,spinsum[4],optimizedRules[4],indices,functions,4,4]
+WriteMatrixElement["born_"<>name,born,optimizedRules,indices,functions,4]
 
 
 Print["time used: ", SessionTime[] - time1]

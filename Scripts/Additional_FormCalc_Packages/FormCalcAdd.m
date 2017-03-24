@@ -15,8 +15,7 @@ Hahn.
 BeginPackage["FormCalc`"]
 
 (*Global variables*)
-{FormAddTAG,FormAddAmpOut,FormAddAmpMuNuOut,FormAddDefInd,FormAddDefVarsOut,FormAddVarsSfe6,FormAddUlistSfe6,
-  FormAddVarsSfe6c,FormAddUlistSfe6c,FormAddVarsSfe6Sfe6c,FormAddUlistSfe6Sfe6c,FormAddVars0,FormAddUlist0}
+{Sfe6,Sfe6c,al,be,al0,be0,dcmplx}
 
 SpinCorrelatedSum::usage =
 "SpinCorrelatedSum[expr] sums expr over the polarizations of external
@@ -108,15 +107,37 @@ indices must be defined in the list <indices>. The substitution list <functions>
 <nlegs> is the number of legs of the diagrams."
 
 WriteSpinCorrelatedMatrixElement::usage = 
-"WriteSpinCorrelatedMatrixElement[name_String,ampmunu_,abbr_List,indices_List,functions_List,nlegs_Integer,spinleg_Integer] 
-writes out the spin correlated amplitude given in variable <ampmunu> with abbreviations <abbr>. All open 
+"WriteSpinCorrelatedMatrixElement[name_String,bmunu_,abbr_List,indices_List,functions_List,nlegs_Integer,spinleg_Integer] 
+writes out the spin correlated amplitude given in variable <bmunu> with abbreviations <abbr>. All open 
 indices must be defined in the list <indices>. The substitution list <functions> define which function names should be replaced.
 <nlegs> is the number of legs of the diagrams, <spinleg> is the number of the leg, that was used to calculate the spin correlation."
+
+Cmplx::usage = 
+"Wraps every real variable with a function dcmplx[] which allows fortran to interpret the real variable as a complex one.
+Example: Cmplx[a+I b] yields a+I b where as Cmplx[a] gives dcmplx[a]. The variables a and b must be defined as reals:
+$Assumptions=a\[Element]Reals&&b\[Element]Reals or use $Assumptions=_\[Element]Reals to define every occuring variable as real. 
+Delete the assumptions with $Assumptions=True."
+
+DenCoefficient::usage = 
+"DenCoefficient[a/(b+c),(b+c)] yields a. Useful to extract coeffiecients of a factorial expression."
+
+SplitList::usage = 
+"Split a list into sublists according to the total string length of the included variables."
+
+GetSumIndices::usage =
+""
+
+GetSumand::usage =
+""
+
+NumericSum::usage =
+"NumericSum is an option of SpinCorrelatedSum and WriteSpinCorrelatedMatrixElement. You can 
+choose to carry out the spinsum externally (NumericSum -> True) or to get an analytical expression (False)."
 
 Begin["`Private`"]
 
 Print[];
-Print["FormCalcAdd 1.2 (16 Dec 2016)"];
+Print["FormCalcAdd 1.3.0 (23 Mar 2016)"];
 Print["by Matthias Kesenheimer, with thanks to Thomas Hahn"];
 
 
@@ -132,8 +153,8 @@ SubstitutionTail[a_->b_]:=b
 ConjugateVariable[a_Symbol]:=ToExpression[ToString[a]<>"c"]/;StringTake[ToString[a],-1]=!="c"
 ConjugateVariable[a_Symbol]:=ToExpression[StringTake[ToString[a],StringLength[ToString[a]]-1]]/;StringTake[ToString[a],-1]==="c"
 GetArgument[a__Symbol]:=Null
-GetArgument[f_[a__Symbol]]:={a}
-GetArgument[Conjugate[f_[a__Symbol]]]:={a}
+GetArgument[f_[a__]]:={a}
+GetArgument[Conjugate[f_[a__]]]:={a}
 ListToElements[list1_->list2_]:=Table[list1[[i]]->list2[[i]],{i,1,Length[list1]}]/.List->Sequence
 ConjugateRuleElement[a_->b_]:=Sequence[Conjugate[a]->Conjugate[b]]/.{ListToElements[GetArgument[a]->Map[ConjugateVariable,GetArgument[a]]]}
 ConjugateRule[rule_]:=Map[ConjugateRuleElement,rule]
@@ -147,7 +168,8 @@ Options[SpinCorrelatedSum] = {
   GaugeTerms -> True,
   NoBracket -> NoBracket,
   EditCode -> False,
-  RetainFile -> False }
+  RetainFile -> False,
+  NumericSum -> False }
 
 SpinCorrelatedSum::noprocess = "No process defined so far.  \
 SpinCorrelatedSum works only after DeclareProcess or CalcFeynAmp."
@@ -167,7 +189,7 @@ Block[ {Hel},
 ]
 
 SpinCorrelatedSum[expr_, opt___?OptionQ] :=
-Block[ {slegs, dim, gauge, nobrk, edit, retain,
+Block[ {slegs, dim, gauge, nobrk, edit, retain, numsum,
 fullexpr, lor, indices, legs, masses, etasubst, vars, hh, abbr,
 subexpr, subexprc, rules},
 
@@ -175,7 +197,7 @@ subexpr, subexprc, rules},
     Message[SpinCorrelatedSum::noprocess];
     Abort[] ];
     
-  {slegs, dim, gauge, nobrk, edit, retain} =
+  {slegs, dim, gauge, nobrk, edit, retain, numsum} =
     ParseOpt[SpinCorrelatedSum, opt] /. Options[CalcFeynAmp];
 
   abbr = OptimizeAbbr[Abbr[]];
@@ -208,6 +230,7 @@ subexpr, subexprc, rules},
   WriteString[hh, "\
 #define Dim \"", ToString[dim], "\"\n\
 #define GaugeTerms \"" <> ToString[gauge] <> "\"\n\
+#define NumericSum \"" <> ToString[numsum] <> "\"\n\
 #define FermionChains \"None\"\n\n" <>
     vars[[1]] <> "\n\
 #procedure EtaSubst\n" <>
@@ -398,6 +421,24 @@ AmpSimplify[Amp[F1][(2+a[i])SumOver[i,2,External],(c[j]+c[t])SumOver[j,2,Externa
 AmpSimplify[Amp[F1][(2+a[i])SumOver[i,2,External],(c[j]+c[t])SumOver[j,2,External],(r*q+b[k])SumOver[k,2,External],d[k]SumOver[k,2,External]]]*)
 
 
+Clear[getName,Cmplx,isComplex]
+getName[var_]:=If[Head[var]===Symbol,ToString[var],ToString[Head[var]]]
+isComplex[var_]:=If[StringLength[getName[var]]>1,StringTake[getName[var],-1]=="C"||StringTake[getName[var],-1]=="c",False]
+Cmplx[a_]:=a
+Cmplx[a_]:=a/;isComplex[a]
+Cmplx[a_]:=dcmplx[a]/;Simplify[Im[a]==0]
+
+(*Test*)
+(*
+$Assumptions=_\[Element]Reals;
+Cmplx[a]
+Cmplx[a+I b]
+Cmplx[MZC]
+Cmplx[MfC[1,2]]
+$Assumptions=True;
+*)
+
+
 (*break line automatically*)
 WriteStringn[strm_,str_]:=WriteString[strm,str<>"\n"]
 
@@ -427,157 +468,86 @@ GetElementsWithoutArgs[list_List,arg__]:=Map[ExprWithoutArgs[#,arg]&,list]
 Subsetn[list_List,n_Integer]:=Block[{subs},Join[subs=Partition[list,n],{Complement[list,Flatten[subs]]}]]/.{}->Sequence[]
 
 
-(*TODO: this is not the final version! \[Rule] more generalization needed!*)
-WriteMatrixElement[name_String,amp_,abbr_List,indices_List,functions_List,nlegs_Integer]:=Block[
-  {strm,defvars,i,Sfe6,Sfe6c,vars,ulist},
-
-  Clear[FormAddTAG,FormAddAmpOut,FormAddAmpMuNuOut,FormAddDefInd,FormAddDefVarsOut,FormAddVarsSfe6,FormAddUlistSfe6,
-        FormAddVarsSfe6c,FormAddUlistSfe6c,FormAddVarsSfe6Sfe6c,FormAddUlistSfe6Sfe6c,FormAddVars0,FormAddUlist0];
-
-  (*generate fortran code*)
-  strm = OpenFortran[name<>".mf"];
-  WriteStringn[strm, "subroutine "<>name<>"(p,amp)"];
-  WriteStringn[strm, "implicit none"];
-  WriteStringn[strm, "#include \"PhysPars.h\""];
-  WriteStringn[strm, "#include \"pwhg_math.h\""];
-  WriteStringn[strm, "double precision p(0:3,"<>ToString[nlegs]<>")"];
-  WriteStringn[strm, "double precision amp"];
-  For[i=1,i<=nlegs,i++,
-    WriteStringn[strm, "double precision k"<>ToString[i]<>"(0:3)"];
+(*Split a list into sublists according to their total string length*)
+SplitList[list_List,maxStrLn_Integer]:=Block[{s,i,v,out},
+  out={};
+  v={};
+  For[i=1,i<=Length[list],i++,
+    If[StringLength[ToString[v]]<maxStrLn,
+      v=Join[v,{list[[i]]}];,
+      out=Join[out,{v}];
+      v={list[[i]]};
+    ];
   ];
-  If[nlegs==4,
-    WriteStringn[strm, "double precision S, T, U"];
+  out=Join[out,{v}];
+  out
+]
+(*Test*)
+(*l={Sfe6,Sfe6c,Sfe7,Sfe7c,Sfe8,Sfe8c,Sfe9,Sfe9c,Sfe10,Sfe10c,Sfe11,Sfe11c,Sfe12,Sfe12c,Sfe13,Sfe13c}
+SplitList[l,72]*)
+
+
+(*Convert a List to a string with comma delimiter*)
+ListToString[list_List]:=Block[{i,s},
+  s="";
+  For[i=1,i<=Length[list],i++,
+    s=s<>ToString[list[[i]]];
+    If[i<Length[list],s=s<>",";]
   ];
-  If[nlegs==5,
-    WriteStringn[strm, "double precision S, T, U, S34, T14, T24"];
-  ];
-  
-  FormAddDefInd = Join[GetVariables[indices],{FormAddTAG}];
-  WriteStringn[strm, "integer <* FormAddDefInd *>"];
-
-  (*define functions*)
-  WriteStringn[strm, ""];
-  WriteStringn[strm, "double precision Epsilon, DotP, Den"];
-  WriteStringn[strm, "double precision momsq, momsum2sq, momsum3sq"];
-  WriteStringn[strm, "external Epsilon, DotP, Den"];
-  WriteStringn[strm, "external momsq, momsum2sq, momsum3sq"];
-
-  (*define local variables*)
-  WriteStringn[strm, ""];
-  defvars=Map[Join[#,{FormAddTAG}]&,Subsetn[GetVariables[abbr]/.indices,4]];
-  For[i=1,i<=Length[defvars],i++,
-    FormAddDefVarsOut[i]=defvars[[i]];
-    WriteStringn[strm, "double precision <* FormAddDefVarsOut["<>ToString[i]<>"] *>"];
-  ];
-
-  (*reset*)
-  WriteStringn[strm, ""];
-  WriteStringn[strm, "amp = 0D0"];
-
-  (*Momenta and Mandelstams*)
-  WriteStringn[strm, ""];
-  For[i=1,i<=nlegs,i++,
-    WriteStringn[strm, "k"<>ToString[i]<>"(:) = p(:,"<>ToString[i]<>")"];
-  ];
-  WriteStringn[strm, "S   = momsum2sq(k1(:), k2(:))"];
-  WriteStringn[strm, "T   = momsum2sq(k1(:),-k3(:))"];
-  WriteStringn[strm, "U   = momsum2sq(k2(:),-k3(:))"];
-  If[nlegs==5,
-    WriteStringn[strm, "S34 = momsum2sq(k3(:), k4(:))"];
-    WriteStringn[strm, "T14 = momsum2sq(k1(:),-k4(:))"];
-    WriteStringn[strm, "T24 = momsum2sq(k2(:),-k3(:))"];
-  ];
-
-  (*calculate abbreviations*)
-  vars=GetVariables[abbr];
-  ulist=Map[UniqueName,vars];
-
-  FormAddVarsSfe6=GetElementsWithArgs[vars,Sfe6];
-  FormAddUlistSfe6=GetElementsWithArgs[ulist,Sfe6];
-  FormAddVarsSfe6c=GetElementsWithArgs[vars,Sfe6c];
-  FormAddUlistSfe6c=GetElementsWithArgs[ulist,Sfe6c];
-  FormAddVarsSfe6Sfe6c=GetElementsWithArgs[vars,Sfe6,Sfe6c];
-  FormAddUlistSfe6Sfe6c=GetElementsWithArgs[ulist,Sfe6,Sfe6c];
-  FormAddVars0=GetElementsWithoutArgs[vars,Sfe6c,Sfe6];
-  FormAddUlist0=GetElementsWithoutArgs[ulist,Sfe6c,Sfe6];
-
-  WriteStringn[strm, ""];
-  MapThread[  WriteStringn[strm, "      <* "<>ToString[#1]<>" *> = <* "<>ToString[#2]<>" *>" ]&,{FormAddVars0,FormAddUlist0}];
-
-  If[Length[FormAddVarsSfe6]!=0,
-    WriteStringn[strm, ""];
-    WriteStringn[strm, "do Sfe6=1,2"];
-    MapThread[  WriteStringn[strm, "      <* "<>ToString[#1]<>" *> = <* "<>ToString[#2]<>" *>" ]&,{FormAddVarsSfe6,FormAddUlistSfe6}];
-    WriteStringn[strm, "enddo"];
-  ];
-
-  If[Length[FormAddVarsSfe6c]!=0,
-    WriteStringn[strm, ""];
-    WriteStringn[strm, "do Sfe6c=1,2"];
-    MapThread[  WriteStringn[strm, "      <* "<>ToString[#1]<>" *> = <* "<>ToString[#2]<>" *>" ]&,{FormAddVarsSfe6c,FormAddUlistSfe6c}];
-    WriteStringn[strm, "enddo"];
-  ];
-
-  If[Length[FormAddVarsSfe6Sfe6c]!=0,
-    WriteStringn[strm, ""];
-    WriteStringn[strm, "do Sfe6=1,2"];
-    WriteStringn[strm, "do Sfe6c=1,2"];
-    MapThread[  WriteStringn[strm, "      <* "<>ToString[#1]<>" *> = <* "<>ToString[#2]<>" *>" ]&,{FormAddVarsSfe6Sfe6c,FormAddUlistSfe6Sfe6c}];
-    WriteStringn[strm, "enddo"];
-    WriteStringn[strm, "enddo"];
-  ];
-
-  (*write Matrix element*)
-  WriteStringn[strm, ""];
-  WriteStringn[strm, "amp = <* FormAddAmpOut *>"];
-
-  WriteStringn[strm, ""];
-  WriteStringn[strm, "end"];
-  Close[strm];
-
-  (*substitute wildcards*)
-  AssignValues[ulist,GetValues[abbr]/.functions];
-  FormAddAmpOut=amp/.functions;
-  (*FileTemplateApply[FileTemplate[ame<>".mf"],name<>".f"]*)
-  Splice[name<>".mf", PageWidth -> 72];
-
-  (*finalize the output, remove the Function "List(...)" that is wrapped around the variables*)
-  strm = OpenWrite["finalize.sh"];
-  WriteStringn[strm, "#!/bin/bash"];
-  WriteStringn[strm, "gsed -i -e s/List\(//g "<>name<>".f"];
-  WriteStringn[strm, "gsed -i -e s/,FormAddTAG\)//g "<>name<>".f"];
-  WriteStringn[strm, "gsed -i -e 's/\\t/      /g' "<>name<>".f"];
-  WriteStringn[strm, "mv "<>name<>".f "<>name<>".F"];
-  Close[strm];
-  <<"!chmod +x finalize.sh";
-  <<"!./finalize.sh";
-  <<"!rm *.f-e";
-  <<"!rm finalize.sh";
+  s
 ]
 
 
-(*TODO: this is not the final version! \[Rule] more generalization needed!*)
-WriteSpinCorrelatedMatrixElement[name_String,ampmunu_,abbr_List,indices_List,functions_List,nlegs_Integer,spinleg_Integer]:=Block[
-  {strm,defvars,i,Sfe6,Sfe6c,vars,ulist},
+(*GetSumIndices[Expr SumOver[Sfe6,2]] yields {Sfe6\[Rule]2}*)
+Clear[GetSumIndices,GetSumand]
+GetSumIndices[expr_]:={}
+GetSumIndices[expr_ s_SumOver]:=Join[{GetArgument[s][[1]]->GetArgument[s][[2]]},GetSumIndices[expr]]
+GetSumIndices[expr_ s_FeynArts`SumOver]:=Join[{GetArgument[s][[1]]->GetArgument[s][[2]]},GetSumIndices[expr]]
 
-  Clear[FormAddTAG,FormAddAmpOut,FormAddAmpMuNuOut,FormAddDefInd,FormAddDefVarsOut,FormAddVarsSfe6,FormAddUlistSfe6,
-        FormAddVarsSfe6c,FormAddUlistSfe6c,FormAddVarsSfe6Sfe6c,FormAddUlistSfe6Sfe6c,FormAddVars0,FormAddUlist0];
+(*GetSumand[Expr SumOver[Sfe6,2],{Sfe6\[Rule]2}] yields Expr*)
+GetSumand[sum_,{}]:=sum
+GetSumand[sum_,indices_]:=Coefficient[sum,MapThread[SumOver[#1,#2]&,{GetVariables[indices],GetValues[indices]}]/.List->Times]
+GetSumand[sum_,indices_]:=Coefficient[sum,MapThread[FeynArts`SumOver[#1,#2]&,{GetVariables[indices],GetValues[indices]}]/.List->Times]
+
+
+Options[WriteSpinCorrelatedMatrixElement] = {
+  NumericSum -> False }
+
+WriteSpinCorrelatedMatrixElement[name_String,bmunu_,abbr_List,nlegs_Integer,spinleg_Integer,opt___?OptionQ]:=Block[
+  {numsum,strm,i,j,vars,ulist,indices,indlist,indlist50,indliststr,varlist,varlist50,varliststr,names,bmunu0,functions,sumindices,indexcomb},
 
   If[spinleg>nlegs,Print["Error: spinleg > nlegs."];Exit[];];
 
+  {numsum} =
+    ParseOpt[WriteSpinCorrelatedMatrixElement, opt];
+
   (*generate fortran code*)
   strm = OpenFortran[name<>".mf"];
-  WriteStringn[strm, "subroutine "<>name<>"(p,ampmunu)"];
+  WriteStringn[strm, "subroutine "<>name<>"(p,bmunu)"];
   WriteStringn[strm, "implicit none"];
   WriteStringn[strm, "#include \"PhysPars.h\""];
-  WriteStringn[strm, "#include \"pwhg_math.h\""];
+  WriteStringn[strm, "double precision pi"];
+  WriteStringn[strm, "parameter (pi = 4.D0*datan(1.D0))"];
   WriteStringn[strm, "double precision p(0:3,"<>ToString[nlegs]<>")"];
-  WriteStringn[strm, "double precision al(0:3), be(0:3)"];
-  WriteStringn[strm, "integer alind, beind"];
-  WriteStringn[strm, "double precision ampmunu(0:3,0:3,"<>ToString[nlegs]<>")"];
-  For[i=1,i<=nlegs,i++,
-    WriteStringn[strm, "double precision k"<>ToString[i]<>"(0:3)"];
+  If[!numsum,
+    WriteStringn[strm, "double precision al(0:3), be(0:3)"];
+    WriteStringn[strm, "double precision eta"<>ToString[spinleg]<>"(0:3)"];
+    WriteStringn[strm, "parameter (eta"<>ToString[spinleg]<>" = (/1.,0.,0.,0./))"];
+  ,(*else*)
+    WriteStringn[strm, "integer hels, helt"];
+    WriteStringn[strm, "double complex es"<>ToString[spinleg]<>"(0:3), ecs"<>ToString[spinleg]<>"(0:3)"];
+    WriteStringn[strm, "double complex et"<>ToString[spinleg]<>"(0:3), ect"<>ToString[spinleg]<>"(0:3)"];
   ];
+  WriteStringn[strm, "integer alind, beind, i, j"];
+  WriteStringn[strm, "double precision bmunu(0:3,0:3,"<>ToString[nlegs]<>")"];
+  For[i=1,i<=nlegs,i++,
+    If[!numsum,
+      WriteStringn[strm, "double precision k"<>ToString[i]<>"(0:3)"];
+    ,(*else*)
+      WriteStringn[strm, "double complex k"<>ToString[i]<>"(0:3)"];
+    ];
+  ];
+  (*TODO: generalize*)
   If[nlegs==4,
     WriteStringn[strm, "double precision S, T, U"];
   ];
@@ -585,123 +555,230 @@ WriteSpinCorrelatedMatrixElement[name_String,ampmunu_,abbr_List,indices_List,fun
     WriteStringn[strm, "double precision S, T, U, S34, T14, T24"];
   ];
 
-  FormAddDefInd = Join[GetVariables[indices],{FormAddTAG}];
-  WriteStringn[strm, "integer <* FormAddDefInd *>"];
+  (*determine the indices that can occur in our matrix element*)
+  bmunu0 = SplitSums[bmunu];
+  sumindices = Map[GetSumIndices[#]&,bmunu0];
+  bmunu0 = Map[GetSumand[#,GetSumIndices[#]]&,bmunu0];
+  indices = Apply[Union,sumindices];
+  (*bypass errors if indices list is empty*)
+  If[Length[indices]==0,
+    indices = {Placeholder->0};
+  ];
+  indexcomb = Subsets[indices];
 
-  (*define functions*)
-  WriteStringn[strm, ""];
-  WriteStringn[strm, "double precision Epsilon, DotP, Den"];
-  WriteStringn[strm, "double precision momsq, momsum2sq, momsum3sq"];
-  WriteStringn[strm, "external Epsilon, DotP, Den"];
-  WriteStringn[strm, "external momsq, momsum2sq, momsum3sq"];
-
-  (*define local variables*)
-  WriteStringn[strm, ""];
-  defvars=Map[Join[#,{FormAddTAG}]&,Subsetn[GetVariables[abbr]/.indices,4]];
-  For[i=1,i<=Length[defvars],i++,
-    FormAddDefVarsOut[i]=defvars[[i]];
-    WriteStringn[strm, "double precision <* FormAddDefVarsOut["<>ToString[i]<>"] *>"];
+  (*write out indices*)
+  indlist = GetVariables[indices];
+  indlist50 = SplitList[indlist,50];
+  indliststr = Map[ListToString[#]&,indlist50];
+  If[Length[indlist]!=0,
+    For[i=1,i<=Length[indliststr],i++,
+      WriteStringn[strm, "integer "<>indliststr[[i]]];
+    ];
   ];
 
-  (*reset*)
+  (*write out abbreviations and subexpressions*)
+  varlist = GetVariables[abbr]/.indices;
+  varlist50 = SplitList[Map[FortranForm[#]&,varlist],50];
+  varliststr = Map[ListToString[#]&,varlist50];
+  If[Length[varlist]!=0,
+    For[i=1,i<=Length[varliststr],i++,
+      If[!numsum,
+        WriteStringn[strm, "double precision "<>varliststr[[i]]];
+      ,(*else*)
+        WriteStringn[strm, "double complex "<>varliststr[[i]]];
+      ];
+    ];
+  ];
+
+  (*define external functions*)
   WriteStringn[strm, ""];
-  WriteStringn[strm, "ampmunu(:,:,:) = 0D0"];
+  WriteStringn[strm, "double precision Epsilon, DotP, Den, Kronecker"];
+  WriteStringn[strm, "double precision momsq, momsum2sq, momsum3sq"];
+  WriteStringn[strm, "double complex cDotP"];
+  WriteStringn[strm, "external Epsilon, DotP, Den, Kronecker"];
+  WriteStringn[strm, "external momsq, momsum2sq, momsum3sq"];
+  WriteStringn[strm, "external cDotP"];
+
+  (*reset the amplitude*)
+  WriteStringn[strm, ""];
+  WriteStringn[strm, "bmunu(:,:,:) = 0D0"];
 
   (*Momenta and Mandelstams*)
-  WriteStringn[strm, ""];
-  For[i=1,i<=nlegs,i++,
-    WriteStringn[strm, "k"<>ToString[i]<>"(:) = p(:,"<>ToString[i]<>")"];
-  ];
-  WriteStringn[strm, "S   = momsum2sq(k1(:), k2(:))"];
-  WriteStringn[strm, "T   = momsum2sq(k1(:),-k3(:))"];
-  WriteStringn[strm, "U   = momsum2sq(k2(:),-k3(:))"];
+  WriteStringn[strm, "S   = momsum2sq(p(:,1), p(:,2))"];
+  WriteStringn[strm, "T   = momsum2sq(p(:,1),-p(:,3))"];
+  WriteStringn[strm, "U   = momsum2sq(p(:,2),-p(:,3))"];
   If[nlegs==5,
-    WriteStringn[strm, "S34 = momsum2sq(k3(:), k4(:))"];
-    WriteStringn[strm, "T14 = momsum2sq(k1(:),-k4(:))"];
-    WriteStringn[strm, "T24 = momsum2sq(k2(:),-k3(:))"];
+    WriteStringn[strm, "S34 = momsum2sq(p(:,3), p(:,4))"];
+    WriteStringn[strm, "T14 = momsum2sq(p(:,1),-p(:,4))"];
+    WriteStringn[strm, "T24 = momsum2sq(p(:,2),-p(:,4))"];
+  ];
+
+  WriteStringn[strm, ""];
+  If[!numsum,
+    WriteStringn[strm, "do i=0,3"];
+    WriteStringn[strm, "if(i.eq.0) then"];
+    For[i=1,i<=nlegs,i++,
+      WriteStringn[strm, "k"<>ToString[i]<>"(i) = p(i,"<>ToString[i]<>")"];
+    ];
+    WriteStringn[strm, "else"];
+    For[i=1,i<=nlegs,i++,
+      WriteStringn[strm, "k"<>ToString[i]<>"(i) = -p(i,"<>ToString[i]<>")"];
+    ];
+    WriteStringn[strm, "endif"];
+    WriteStringn[strm, "enddo"];
+  ,(*else*)
+    WriteStringn[strm, "do i=0,3"];
+    For[i=1,i<=nlegs,i++,
+      WriteStringn[strm, "k"<>ToString[i]<>"(i) = dcmplx(p(i,"<>ToString[i]<>"))"];
+    ];
+    WriteStringn[strm, "enddo"];
   ];
 
   (*loop over al and be*)
   WriteStringn[strm, ""];
   WriteStringn[strm, "do alind=0,3"];
   WriteStringn[strm, "do beind=0,3"];
-  WriteStringn[strm, ""];
-  WriteStringn[strm, "al(:) = 0D0"];
-  WriteStringn[strm, "al(alind) = 1D0"];
-  WriteStringn[strm, "be(:) = 0D0"];
-  WriteStringn[strm, "be(beind) = 1D0"];
+
+  (*if NumericSum -> True was requested, sum over the gluon helicities*)
+  If[numsum,
+    WriteStringn[strm, "do hels=-1,1,2"];
+    WriteStringn[strm, "do helt=-1,1,2"];
+    WriteStringn[strm, ""];
+    WriteStringn[strm, "call polvector(dreal(k"<>ToString[spinleg]<>"), hels, es"<>ToString[spinleg]<>")"];
+    WriteStringn[strm, "call polvector(dreal(k"<>ToString[spinleg]<>"), helt, et"<>ToString[spinleg]<>")"];
+    WriteStringn[strm, "ecs"<>ToString[spinleg]<>"(:) = dconjg(es"<>ToString[spinleg]<>"(:))"];
+    WriteStringn[strm, "ect"<>ToString[spinleg]<>"(:) = dconjg(et"<>ToString[spinleg]<>"(:))"];
+  ];
+
+  If[!numsum,
+    WriteStringn[strm, ""];
+    WriteStringn[strm, "al(:) = 0D0"];
+    WriteStringn[strm, "if(alind.eq.0) then"];
+    WriteStringn[strm, "al(alind) = 1D0"];
+    WriteStringn[strm, "else"];
+    WriteStringn[strm, "al(alind) = -1D0"];
+    WriteStringn[strm, "endif"];
+    WriteStringn[strm, "be(:) = 0D0"];
+    WriteStringn[strm, "if(beind.eq.0) then"];
+    WriteStringn[strm, "be(beind) = 1D0"];
+    WriteStringn[strm, "else"];
+    WriteStringn[strm, "be(beind) = -1D0"];
+    WriteStringn[strm, "endif"];
+  ];
 
   (*calculate abbreviations*)
   vars=GetVariables[abbr];
+  (*build a unique list of all local variables*)
   ulist=Map[UniqueName,vars];
 
-  FormAddVarsSfe6=GetElementsWithArgs[vars,Sfe6];
-  FormAddUlistSfe6=GetElementsWithArgs[ulist,Sfe6];
-  FormAddVarsSfe6c=GetElementsWithArgs[vars,Sfe6c];
-  FormAddUlistSfe6c=GetElementsWithArgs[ulist,Sfe6c];
-  FormAddVarsSfe6Sfe6c=GetElementsWithArgs[vars,Sfe6,Sfe6c];
-  FormAddUlistSfe6Sfe6c=GetElementsWithArgs[ulist,Sfe6,Sfe6c];
-  FormAddVars0=GetElementsWithoutArgs[vars,Sfe6c,Sfe6];
-  FormAddUlist0=GetElementsWithoutArgs[ulist,Sfe6c,Sfe6];
-
-  WriteStringn[strm, ""];
-  MapThread[  WriteStringn[strm, "      <* "<>ToString[#1]<>" *> = <* "<>ToString[#2]<>" *>" ]&,{FormAddVars0,FormAddUlist0}];
-
-  If[Length[FormAddVarsSfe6]!=0,
-    WriteStringn[strm, ""];
-    WriteStringn[strm, "do Sfe6=1,2"];
-    MapThread[  WriteStringn[strm, "      <* "<>ToString[#1]<>" *> = <* "<>ToString[#2]<>" *>" ]&,{FormAddVarsSfe6,FormAddUlistSfe6}];
-    WriteStringn[strm, "enddo"];
+  For[i=1,i<=Length[indexcomb],i++,
+    If[Length[indexcomb[[i]]]==0,
+      Evaluate[ToExpression["FormCalc`VarsOut"<>ToString[i]]] = GetElementsWithoutArgs[vars,Apply[Sequence,GetVariables[Last[indexcomb]]]];
+      Evaluate[ToExpression["FormCalc`UlistOut"<>ToString[i]]] = GetElementsWithoutArgs[ulist,Apply[Sequence,GetVariables[Last[indexcomb]]]];,
+    (*else*)
+      Evaluate[ToExpression["FormCalc`VarsOut"<>ToString[i]]] = GetElementsWithArgs[vars,Apply[Sequence,GetVariables[indexcomb[[i]]]]];
+      Evaluate[ToExpression["FormCalc`UlistOut"<>ToString[i]]] = GetElementsWithArgs[ulist,Apply[Sequence,GetVariables[indexcomb[[i]]]]];
+    ];
+    If[Length[Evaluate[ToExpression["FormCalc`VarsOut"<>ToString[i]]]]!=0,
+      WriteStringn[strm, ""];
+      For[j=1,j<=Length[indexcomb[[i]]],j++,
+        WriteStringn[strm, "do "<>ToString[GetVariables[indexcomb[[i]]][[j]]]<>"=1,"<>ToString[GetValues[indexcomb[[i]]][[j]]]];
+      ];
+      MapThread[WriteStringn[strm, "      <* "<>ToString[#1]<>" *> = <* "<>ToString[#2]<>" *>" ]&,{Evaluate[ToExpression["FormCalc`VarsOut"<>ToString[i]]],Evaluate[ToExpression["FormCalc`UlistOut"<>ToString[i]]]}];
+      For[j=1,j<=Length[indexcomb[[i]]],j++,
+        WriteStringn[strm, "enddo"];
+      ];
+    ];
   ];
 
-  If[Length[FormAddVarsSfe6c]!=0,
-    WriteStringn[strm, ""];
-    WriteStringn[strm, "do Sfe6c=1,2"];
-    MapThread[  WriteStringn[strm, "      <* "<>ToString[#1]<>" *> = <* "<>ToString[#2]<>" *>" ]&,{FormAddVarsSfe6c,FormAddUlistSfe6c}];
-    WriteStringn[strm, "enddo"];
+  (*substitute wildcards and variable names for the abbreviations and the matrix element*)
+  If[!numsum,
+    functions = {ToExpression["Pair"]->ToExpression["DotP"],ToExpression["IndexDelta"]->ToExpression["Kronecker"],ToExpression["Eps"]->ToExpression["Epsilon"]};
+  ,(*else*)
+    functions = {ToExpression["Pair"]->ToExpression["cDotP"],ToExpression["IndexDelta"]->ToExpression["Kronecker"],ToExpression["Eps"]->ToExpression["Epsilon"]};
+  ];
+  (*TODO: Ersetzung von eta[al] schon fr\[UDoubleDot]her, z.B. in SpinCorrelatedSum, durchf\[UDoubleDot]hren.*)
+  names = {eta[i_]:>ToExpression["eta"<>ToString[i]], k[i_]:>ToExpression["k"<>ToString[i]],
+           al0->al[0],be0->be[0],ToExpression["deltaalbe"]->ToExpression["al[beind]"],I->ToExpression["ii"],-I->ToExpression["-ii"]};
+  For[i=1,i<=nlegs,i++,
+    names = Join[names,{ToExpression["k"<>ToString[i]<>"0"]->ToExpression["k"<>ToString[i]<>"[0]"]}];
+    names = Join[names,{ToExpression["k"<>ToString[i]<>"al"]->ToExpression["k"<>ToString[i]<>"[alind]"]}];
+    names = Join[names,{ToExpression["k"<>ToString[i]<>"be"]->ToExpression["k"<>ToString[i]<>"[beind]"]}];
+    names = Join[names,{ToExpression["eta"<>ToString[i]<>"al"]->ToExpression["eta"<>ToString[i]<>"[alind]"]}];
+    names = Join[names,{ToExpression["eta"<>ToString[i]<>"be"]->ToExpression["eta"<>ToString[i]<>"[beind]"]}];
+    names = Join[names,{ToExpression["es"<>ToString[i]<>"al"]->ToExpression["es"<>ToString[i]<>"[alind]"]}];
+    names = Join[names,{ToExpression["ect"<>ToString[i]<>"be"]->ToExpression["ect"<>ToString[i]<>"[beind]"]}];
+    names = Join[names,{ToExpression["et"<>ToString[i]<>"al"]->ToExpression["et"<>ToString[i]<>"[alind]"]}];
+    names = Join[names,{ToExpression["ecs"<>ToString[i]<>"be"]->ToExpression["ecs"<>ToString[i]<>"[beind]"]}];
   ];
 
-  If[Length[FormAddVarsSfe6Sfe6c]!=0,
-    WriteStringn[strm, ""];
-    WriteStringn[strm, "do Sfe6=1,2"];
-    WriteStringn[strm, "do Sfe6c=1,2"];
-    MapThread[  WriteStringn[strm, "      <* "<>ToString[#1]<>" *> = <* "<>ToString[#2]<>" *>" ]&,{FormAddVarsSfe6Sfe6c,FormAddUlistSfe6Sfe6c}];
-    WriteStringn[strm, "enddo"];
-    WriteStringn[strm, "enddo"];
-  ];
-
+  (*assign the values for the abbreviations*)
+  AssignValues[ulist,GetValues[abbr]/.names/.functions];
+  
   (*write Matrix element*)
-  WriteStringn[strm, ""];
-  WriteStringn[strm, "ampmunu(alind,beind,"<>ToString[spinleg]<>") = <* FormAddAmpMuNuOut *>"];
+  For[i=1,i<=Length[sumindices],i++,
+    Evaluate[ToExpression["FormCalc`AmpMuNuOut"<>ToString[i]]] = bmunu0[[i]]/.names/.functions;
+    WriteStringn[strm, ""];
+    For[j=1,j<=Length[sumindices[[i]]],j++,
+      WriteStringn[strm, "do "<>ToString[GetVariables[sumindices[[i]]][[j]]]<>"=1,"<>ToString[GetValues[sumindices[[i]]][[j]]]];
+    ];
+    If[!numsum,
+      WriteStringn[strm, "bmunu(alind,beind,"<>ToString[spinleg]<>") = bmunu(alind,beind,"<>ToString[spinleg]<>") + (<* FormCalc`AmpMuNuOut"<>ToString[i]<>" *>)"];
+    ,(*else*)
+      WriteStringn[strm, "bmunu(alind,beind,"<>ToString[spinleg]<>") = bmunu(alind,beind,"<>ToString[spinleg]<>") + dreal(<* FormCalc`AmpMuNuOut"<>ToString[i]<>" *>)"];
+    ];
+    For[j=1,j<=Length[sumindices[[i]]],j++,
+      WriteStringn[strm, "enddo"];
+    ];
+  ];
 
   (*end loop over al and be*)
   WriteStringn[strm, ""];
   WriteStringn[strm, "enddo"];
   WriteStringn[strm, "enddo"];
 
+  (*end loop gluon helicities*)
+  If[numsum,
+    WriteStringn[strm, "enddo"];
+    WriteStringn[strm, "enddo"];
+  ];
+
   WriteStringn[strm, ""];
   WriteStringn[strm, "end"];
   Close[strm];
 
-  (*substitute wildcards*)
-  AssignValues[ulist,GetValues[abbr]/.functions];
-  FormAddAmpMuNuOut=ampmunu/.functions;
-  (*FileTemplateApply[FileTemplate[ame<>".mf"],name<>".f"]*)
   Splice[name<>".mf", PageWidth -> 72];
-
-  (*finalize the output, remove the Function "List(...)" that is wrapped around the variables*)
-  strm = OpenWrite["finalize.sh"];
-  WriteStringn[strm, "#!/bin/bash"];
-  WriteStringn[strm, "gsed -i -e s/List\(//g "<>name<>".f"];
-  WriteStringn[strm, "gsed -i -e s/,FormAddTAG\)//g "<>name<>".f"];
-  WriteStringn[strm, "gsed -i -e 's/\\t/      /g' "<>name<>".f"];
-  WriteStringn[strm, "mv "<>name<>".f "<>name<>".F"];
-  Close[strm];
-  <<"!chmod +x finalize.sh";
-  <<"!./finalize.sh";
-  <<"!rm *.f-e";
-  <<"!rm finalize.sh";
 ]
+
+
+(*Function to get the coefficient of an factorial expression*)
+Clear[DCHelper1,DCHelper,DenCoefficient]
+DCHelper1[expr_,denom_]:=
+Module[{f},f/;
+NumericQ[Denominator[f=Simplify[expr*denom]]]
+&&Not[NumericQ[Denominator[expr]]]
+&&NumericQ[Simplify[Denominator[Simplify[f/denom]]/denom]]]
+DCHelper1[expr_,denom_]:=
+Module[{f},0/;
+Not[NumericQ[Denominator[Simplify[f=expr*denom]]]]
+||NumericQ[Denominator[expr]]
+||Not[NumericQ[Simplify[Denominator[Simplify[f/denom]]/denom]]]]
+DCHelper[expr_,denom_]:=
+Module[{hold},FullSimplify[Plus@@(DCHelper1[#,denom]&/@(List@@(Expand[expr]+hold)))]/.hold->0]
+DenCoefficient[expr_,denom_]:=DCHelper[FullSimplify[DCHelper[expr,denom]/denom],denom]
+(*
+(*Test*)
+DenCoefficient[a/(2(a+b^2)),(a+b^2)]
+DenCoefficient[a/(2(a+b^2)),(a+b)]
+DenCoefficient[a,(a+b)]
+DenCoefficient[a/(a+b),(a+b)^2]
+DenCoefficient[a/(a+b)^2,(a+b)^2]
+DenCoefficient[a/(a+b)^2+a/(a+b)+(a+b)^2/2+b^2/(a^2+2a b+b^2),(a+b)^2]
+(*should give 0:*)
+DenCoefficient[a^2/(a+b)^4+2a b/(a+b)^4+b^2/(a+b)^4,(a+b)^4]
+DenCoefficient[a^2/(a+b)^4+2a b/(a+b)^4+b^2/(a+b)^4,(a+b)^4]
+DenCoefficient[a^4/(a+b)^4+(4*a^3*b)/(a+b)^4+(6*a^2*b^2)/(a+b)^4+(4*a*b^3)/(a+b)^4+b^4/(a+b)^4,(a+b)^4]
+*)
 
 
 End[]

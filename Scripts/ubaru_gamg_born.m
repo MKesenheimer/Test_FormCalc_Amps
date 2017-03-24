@@ -3,7 +3,7 @@
 (*
 generates the Fortran code for
 p p -> weakino weakino jet in the MSSM
-last modified July 2016
+last modified December 2016
 *)
 
 
@@ -15,14 +15,11 @@ SetDirectory[NotebookDirectory[]];
 << FormCalcAdd`
 ClearProcess[]
 <<"!rm *.frm"
-<<"!rm *.wdx"
-<<"!rm *.F"
-<<"!rm *.f"
 
 time1 = SessionTime[]
 
 
-(*You can now load the script with the command $ MathKernel -script Born2.m "ubar" "u" "ubar" "u"*)
+(*You can now load the script with the command $ MathKernel -script Born1.m "ubar" "u" "ubar" "u"*)
 Print[$CommandLine]
 If[$CommandLine[[2]] === "-script",
 	(p[1] = ToString[$CommandLine[[4]]];
@@ -90,18 +87,23 @@ Print[process]
 
 
 (*Neglect Masses (URL)*)
-Neglect[ME] = Neglect[ME2] = 0;
-(*Neglect[MQU] = Neglect[MQD] = 0;*)
 Neglect[MU] = Neglect[MU2] = 0;
 Neglect[MC] = Neglect[MC2] = 0;
-(*Neglect[MT] = Neglect[MT2] = 0;*)
 Neglect[MD] = Neglect[MD2] = 0;
 Neglect[MS] = Neglect[MS2] = 0;
-(*Neglect[MB] = Neglect[MB2] = 0;*)
+Neglect[MUC] = Neglect[MU2C] = 0;
+Neglect[MCC] = Neglect[MC2C] = 0;
+Neglect[MDC] = Neglect[MD2C] = 0;
+Neglect[MSC] = Neglect[MS2C] = 0;
+Neglect[_Mf] = Neglect[_Mf2] = 0;
+Neglect[_MfC] = Neglect[_Mf2C] = 0;
+(*Neglect[MB] = Neglect[MB2] = 0;
+Neglect[MT] = Neglect[MT2] = 0;*)
 
-(*Diagonale CKM Matrix*)
-CKM = IndexDelta;
-CKMC = IndexDelta;
+(*particle widths*)
+widths = {MGl2 -> MGl2 - I MGl WGl, MSf2[a] :> MSf2[a] - I MSf[a] WSf[a], MZ2 -> MZ2 - I MZ WZ, MW2 -> WZ2 - I WZ WW};
+(*real widths*)
+Scan[ (RealQ[#] = True)&, {WGl, _WSf, WW, WZ}];
 
 
 (*Options*)
@@ -109,9 +111,9 @@ SetOptions[InsertFields, Model -> "SMQCD",
            (*No Fermion-Higgs coupling*)
            Restrictions -> {NoLightFHCoupling},
            (*Exclude Top, Higgs, Neutrinos, massive Leptons, Sneutrinos, Sleptons*)
-		   ExcludeParticles -> {S[1|2|3|4|5|6|11|12], F[1|2]},
-		   (*no internal Weakinos*)
-		   LastSelections -> {!F[11],!F[12]}];
+           ExcludeParticles -> {S[1|2|3|4|5|6|11|12], F[1|2]},
+           (*no internal Weakinos*)
+           LastSelections -> {!F[11],!F[12]}];
 
 SetOptions[Paint, PaintLevel -> {Classes}, ColumnsXRows -> {4, 5}, AutoEdit -> False];
 
@@ -120,67 +122,52 @@ SetOptions[Paint, PaintLevel -> {Classes}, ColumnsXRows -> {4, 5}, AutoEdit -> F
 (*4 = constrained differential renormalization,*)
 (*0 = keeps the whole amplitude D-dimensional*)
 SetOptions[CalcFeynAmp,Dimension->D];
+(*Note: There is currently a bug in FormCalc which does not allow to compile*)
+(*the generated code with PaVeReduce\[Rule]True set.*)
+(*One has to replace "Derivative(1)(IGram)(MS2)" with "(-1/(MS2**2))"*)
 
 (*Save the Diagrams*)
 $PaintSE = MkDir["Diagrams"];
 DoPaint[diags_, type_, opt___] := Paint[diags, opt,
   DisplayFunction -> (Export[ToFileName[$PaintSE, name <> "_" <> type <> ".pdf"], #]&)]
 
+(*Coupling order of amplitude*)
+(*Note: all diagrams are calculated, but after the feynman amplitude is generated*)
+(*only the amplitudes with specified order of the coupling constants survive.*)
+(*The diagrams that are generated are therefore not reliable any more.*)
+(*Check results with coupl_order.nb*)
+OrderEL = 2;
+OrderGS = 1;
+PowerOf[GS][x_Integer] := 0/;x>OrderGS
+PowerOf[GS][OrderGS] := 1
+PowerOf[EL][x_Integer] := 0/;x>OrderEL
+PowerOf[EL][OrderEL] := 1
+
 
 Print["Born"]
 
 tops = CreateTopologies[0, 2 -> 2];
 ins = InsertFields[tops, process];
-(*ins = DiagramExtract[ins,2];*)
+
 DoPaint[ins, "born"];
 
-amp = CreateFeynAmp[ins];
-Print["amp = "];
-Print[amp//InputForm];
+born = CalcFeynAmp[CreateFeynAmp[ins]];
 
-ampB = CalcFeynAmp[amp, FermionChains -> Chiral];
 (*insert the partice widths*)
-widths={MZ2->MZ2-I WZ MZ, MW2->MW2-I WW MW, MSf2[sfe_,n1_,n2_]:>MSf2[sfe,n1,n2]-I WSf[sfe,n1,n2] MSf[sfe,n1,n2], MGl2->MGl2-I MGl WGl};
-ampB = ampB/.{Den[x_,y_]:>Den[x,y/.widths]};
-Print["ampB = "];
-Print[ampB//InputForm];
-
-(*execute the polarizations sums over all legs except for external gluons*)
-Legs = {1, 2, 3, 4};
-LegsToSum = Complement[Legs, GluonLegs];
-Print["Summing over legs "<>ToString[LegsToSum]];
-born = PolarizationSum2[ampB, SumLegs -> Legs, GaugeTerms -> False];
-Print["born = "];
-Print[born];
+born = born/.{Den[x_,y_]:>Den[x,y/.widths]}
 
 
 (*Write files*)
-Print["Writing files..."]
 amps = {born};
 {born} = Abbreviate[amps, 6, Preprocess -> OnSize[100, Simplify, 500, DenCollect]];
+
 col = ColourME[All, born];
-abbr = OptimizeAbbr[Abbr[]];
-subexpr = OptimizeAbbr[Subexpr[]];
-subexprc = ConjugateRule[subexpr];
-rules = Join[abbr,subexpr,subexprc];
 
-(*optimize the rules and write out*)
-optimizedRules = LoopRemove[born,rules];
+abbr = OptimizeAbbr[Abbr[]]
+subexpr = OptimizeAbbr[Subexpr[]]
 
-
-(*Preferences*)
-(*Mandelstams and masses are real*)
-$Assumptions=Element[S,Reals]&&Element[S34,Reals]&&Element[T,Reals]&&
-             Element[T14,Reals]&&Element[U,Reals]&&Element[T24,Reals]&&
-             Element[MNeu[_],Reals]&&Element[MSf[___],Reals]&&Element[WSf[___],Reals]&&
-             Element[MU,Reals]&&Element[MW,Reals]&&Element[SB,Reals]&&
-             Element[SW,Reals]&&Element[CW,Reals];
-(*general code substitutions*)
-indices={Sfe6->2,Sfe6c->2};
-functions={Pair->DotP,k[1]->k1,k[2]->k2,k[3]->k3,k[4]->k4,k[5]->k5, IndexDelta->Kronecker,Eps->Epsilon,Conjugate[WSf[i_,j_,k_]]:>WSf[i,j,k],Conjugate[WZ]->WZ, I->ii,-I->-ii};
-
-
-WriteMatrixElement["born_"<>name,born,optimizedRules,indices,functions,4]
+dir = SetupCodeDir[name<>"_born", Drivers -> name <> "_drivers"];
+WriteSquaredME[born, {}, col, abbr, subexpr, dir];
 
 
 Print["time used: ", SessionTime[] - time1]

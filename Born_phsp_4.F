@@ -9,11 +9,13 @@ c the Bjorken x of the two incoming partons,
 c the partonic Mandelstam variable s,
 c the masses for Born and real emission,
 c and the Jacobi factor for the phase space volume
-      subroutine born_phsp(xborn,flav,p_lab)
+      subroutine born_phsp4(xborn,flav,p_lab)
         implicit none
 #include "PhysPars.h"
-#include "nlegborn.h"
 #include "pwhg_math.h"
+        integer nlegborn,ndiminteg
+        parameter (nlegborn=4)
+        parameter (ndiminteg=(nlegborn-1)*3-4+2-1)
         ! input:
         double precision xborn(ndiminteg-3)
         integer  flav(nlegborn)

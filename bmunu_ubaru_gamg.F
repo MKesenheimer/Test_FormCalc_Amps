@@ -1,60 +1,75 @@
-      subroutine bmunu_ubaru_gamg(p,ampmunu)
+      subroutine bmunu_ubaru_gamg(p,bmunu)
       implicit none
 #include "PhysPars.h"
-#include "pwhg_math.h"
+      double precision pi
+      parameter (pi = 4.D0*datan(1.D0))
       double precision p(0:3,4)
-      double precision al(0:3), be(0:3)
-      integer alind, beind
-      double precision ampmunu(0:3,0:3,4)
-      double precision k1(0:3)
-      double precision k2(0:3)
-      double precision k3(0:3)
-      double precision k4(0:3)
+      integer hels, helt
+      double complex es4(0:3), ecs4(0:3)
+      double complex et4(0:3), ect4(0:3)
+      integer alind, beind, i, j
+      double precision bmunu(0:3,0:3,4)
+      double complex k1(0:3)
+      double complex k2(0:3)
+      double complex k3(0:3)
+      double complex k4(0:3)
       double precision S, T, U
-      integer Sfe6,Sfe6c,Sfe7,Sfe7c,Sfe8,Sfe8c,Sfe9,Sfe9c
-      integer Sfe10,Sfe10c,Sfe11,Sfe11c,Sfe12,Sfe12c,Sfe13
-      integer Sfe13c
-      double precision Pair18,Pair16,Pair17,Pair14,Pair15,Abb60,Abb61
-      double precision Sub2,Sub3
+      integer Placeholder
+      double complex Pair18,Pair16,Pair14,Pair15,Pair21,Pair20,Pair17
+      double complex Pair19,Abb61,Abb63,Abb60,Abb62,Sub2,Sub4,Sub3
 
-      double precision Epsilon, DotP, Den
+      double precision Epsilon, DotP, Den, Kronecker
       double precision momsq, momsum2sq, momsum3sq
-      external Epsilon, DotP, Den
+      double complex cDotP
+      external Epsilon, DotP, Den, Kronecker
       external momsq, momsum2sq, momsum3sq
+      external cDotP
 
-      ampmunu(:,:,:) = 0D0
+      bmunu(:,:,:) = 0D0
+      S   = momsum2sq(p(:,1), p(:,2))
+      T   = momsum2sq(p(:,1),-p(:,3))
+      U   = momsum2sq(p(:,2),-p(:,3))
 
-      k1(:) = p(:,1)
-      k2(:) = p(:,2)
-      k3(:) = p(:,3)
-      k4(:) = p(:,4)
-      S   = momsum2sq(k1(:), k2(:))
-      T   = momsum2sq(k1(:),-k3(:))
-      U   = momsum2sq(k2(:),-k3(:))
+      do i=0,3
+      k1(i) = dcmplx(p(i,1))
+      k2(i) = dcmplx(p(i,2))
+      k3(i) = dcmplx(p(i,3))
+      k4(i) = dcmplx(p(i,4))
+      enddo
 
       do alind=0,3
       do beind=0,3
+      do hels=-1,1,2
+      do helt=-1,1,2
 
-      al(:) = 0D0
-      al(alind) = 1D0
-      be(:) = 0D0
-      be(beind) = 1D0
+      call polvector(dreal(k4), hels, es4)
+      call polvector(dreal(k4), helt, et4)
+      ecs4(:) = dconjg(es4(:))
+      ect4(:) = dconjg(et4(:))
 
-      Pair18 = DotP(al,be)
-      Pair16 = DotP(k1,al)
-      Pair17 = DotP(k1,be)
-      Pair14 = DotP(k2,al)
-      Pair15 = DotP(k2,be)
-      Abb60 = -(Pair14*Pair15) + Pair16*Pair17
-      Abb61 = Pair16*Pair17*S + Abb60*U
-      Sub2 = 4*Pair14*Pair15*T - Pair18*T**2
-      Sub3 = 4*Pair16*Pair17*U - Pair18*U**2
+      Pair18 = cDotP(k1,ect4)
+      Pair16 = cDotP(k1,es4)
+      Pair14 = cDotP(k2,ect4)
+      Pair15 = cDotP(k2,es4)
+      Pair21 = cDotP(k3,ect4)
+      Pair20 = cDotP(k3,es4)
+      Pair17 = cDotP(k4,ect4)
+      Pair19 = cDotP(k4,es4)
+      Abb61 = -(Pair14*Pair15) + Pair16*Pair18
+      Abb63 = Pair15*Pair17 + 4*Pair16*Pair18 + Pair14*Pair19
+      Abb60 = 4*Pair14*Pair15 + Pair16*Pair17 + Pair18*Pair19
+      Abb62 = 2*Pair16*Pair18 - Pair17*Pair20 - Pair19*(Pair17 + Pair21)
+      Sub2 = 2*Abb60*T*es4(alind) + T**2*et4(alind)
+      Sub4 = 2*Abb63*U*es4(alind) + U**2*et4(alind)
+      Sub3 = -4*(Abb62*S + 2*Abb61*U)*es4(alind) + S**2*et4(alind)
 
-      ampmunu(alind,beind,4) = (-128*Alfa*Alfas*Pi**2*
-     -    (Sub2*Den(T,MU2)**2 + 
-     -      (4*Abb61 + Pair18*S**2)*Den(T,MU2)*Den(U,MU2) + 
-     -      Sub3*Den(U,MU2)**2))/9.
+      bmunu(alind,beind,4) = bmunu(alind,beind,4) +
+     -   dreal(-(Alfa*Alfas*Pi**2*((-128*Sub3*Den(T,MU2)*Den(U,MU2))/9. +
+     -      (128*(Sub2*Den(T,MU2)**2 + Sub4*Den(U,MU2)**2))/9.)*
+     -    ect4(beind)))
 
+      enddo
+      enddo
       enddo
       enddo
 

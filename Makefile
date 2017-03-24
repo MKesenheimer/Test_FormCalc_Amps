@@ -90,12 +90,12 @@ $(shell mkdir -p build)
 # or -ffixed-line-length-none options
 CPP = -cpp
 
-## For debugging uncomment the following
-#DEBUG = -ggdb -pg -D DEBUG
-## more verbose debugging
-DEBUG = -ggdb -pg -DDEBUG=0 -DDEBUGV
-## If you wish to show all possible debug output
-#DEBUG = -ggdb -pg -D DEBUG -D DEBUGV -D DEBUGQ -D CHECK
+## For debugging uncomment the following, choose a number between 0 and 
+# 4 to choose the level of verbosity (higher means more output).
+LEVEL = 0
+DEBUG = -ggdb -pg -DDEBUG=$(LEVEL)
+# Runtime check
+#DEBUG += -fcheck=all
 
 ########################################################################
 ## Paths
@@ -127,8 +127,8 @@ AMPS_F := $(wildcard $(SUBWORKINGDIR)/squaredme/*.F)
 AMPS := $(notdir $(AMPS_F:.F=.o))
 
 ### Main Files ###
-MAIN = Main.o funcprocess.o funcbasic.o VecSet.o phi1_2.o Born_phsp.o \
-	init_couplings.o boostrot.o born_ubaru_gamg.o \
+MAIN = Main.o funcprocess.o funcbasic.o VecSet.o phi1_2.o Born_phsp_4.o Born_phsp_5.o\
+	init_couplings.o boostrot.o \
 	bmunu_ubaru_gamg.o $(AMPS)
 
 ########################################################################

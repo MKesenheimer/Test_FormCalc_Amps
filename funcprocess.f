@@ -167,7 +167,6 @@ c pick SUSY masses relevant for specific initial state
       subroutine set_process(nlegs, flav, M)
         implicit none
 #include "PhysPars.h"
-#include "nlegborn.h"
 #include "indices.h"
         integer nlegs
         integer flav(nlegs), i

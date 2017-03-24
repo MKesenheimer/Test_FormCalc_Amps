@@ -11,16 +11,16 @@
       double precision k3(0:3)
       double precision k4(0:3)
       double precision S, T, U
-      integer Sfe6,Sfe6c
+      integer Sfe6,Sfe6c,Sfe7,Sfe7c,Sfe8,Sfe8c,Sfe9,Sfe9c
+      integer Sfe10,Sfe10c,Sfe11,Sfe11c,Sfe12,Sfe12c,Sfe13
+      integer Sfe13c
+      double precision Pair18,Pair16,Pair17,Pair14,Pair15,Abb60,Abb61
+      double precision Sub2,Sub3
 
       double precision Epsilon, DotP, Den
       double precision momsq, momsum2sq, momsum3sq
       external Epsilon, DotP, Den
       external momsq, momsum2sq, momsum3sq
-
-      double precision Pair18,Pair16,Pair17,Pair14
-      double precision Pair15,Abb60,Abb61,Sub2
-      double precision Sub3
 
       ampmunu(:,:,:) = 0D0
 
@@ -50,7 +50,7 @@
       Sub2 = 4*Pair14*Pair15*T - Pair18*T**2
       Sub3 = 4*Pair16*Pair17*U - Pair18*U**2
 
-      ampmunu(alind,beind,4) =         (-128*Alfa*Alfas*Pi**2*
+      ampmunu(alind,beind,4) = (-128*Alfa*Alfas*Pi**2*
      -    (Sub2*Den(T,MU2)**2 + 
      -      (4*Abb61 + Pair18*S**2)*Den(T,MU2)*Den(U,MU2) + 
      -      Sub3*Den(U,MU2)**2))/9.

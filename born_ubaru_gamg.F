@@ -16,7 +16,6 @@
       external Epsilon, DotP, Den
       external momsq, momsum2sq, momsum3sq
 
-
       amp = 0D0
 
       k1(:) = p(:,1)
@@ -27,8 +26,7 @@
       T   = momsum2sq(k1(:),-k3(:))
       U   = momsum2sq(k2(:),-k3(:))
 
-
-      amp =         -(Alfa*Alfas*Pi**2*((-512*S**2*Den(T,MU2)*Den(U,MU2))/9. + 
+      amp = -(Alfa*Alfas*Pi**2*((-512*S**2*Den(T,MU2)*Den(U,MU2))/9. + 
      -      (512*(T**2*Den(T,MU2)**2 + U**2*Den(U,MU2)**2))/9.))
 
       end

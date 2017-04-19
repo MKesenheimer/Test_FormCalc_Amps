@@ -122,7 +122,7 @@ SetOptions[InsertFields, Model -> "MSSMCT",
            (*Exclude Top, Higgs, Neutrinos, massive Leptons, Sneutrinos, Sleptons*)
 		   ExcludeParticles -> {S[1|2|3|4|5|6|11|12], F[1|2]},
 		   (*no internal Weakinos*)
-		   LastSelections -> {!F[11],!F[12]}];
+		   LastSelections -> {!F[11],!F[12], V[2]}];
 
 SetOptions[Paint, PaintLevel -> {Classes}, ColumnsXRows -> {4, 5}, AutoEdit -> False];
 
@@ -142,7 +142,7 @@ Print["Born"]
 
 tops = CreateTopologies[0, 2 -> 3];
 ins = InsertFields[tops, process];
-ins = DiagramExtract[ins,2];
+(*ins = DiagramExtract[ins,2];*)
 DoPaint[ins, "born"];
 
 amp = CreateFeynAmp[ins];

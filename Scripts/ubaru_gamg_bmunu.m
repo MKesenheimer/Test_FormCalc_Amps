@@ -156,6 +156,10 @@ born = PolarizationSum2[ampB, SumLegs -> LegsToSum, GaugeTerms -> False];
 Print["born = "];
 Print[born];
 
+full = PolarizationSum2[ampB, SumLegs -> Legs, GaugeTerms -> False];
+Print["full = "];
+Print[full];
+
 (*carry out the spin correlated sum and store the result in variables called spinsum`i'*)
 Do[
   Pair[eta[i], eta[i]] = 1;
@@ -177,16 +181,26 @@ subexprc = ConjugateRule[subexpr];
 rules = Join[abbr,subexpr,subexprc];
 
 (*Write spin correlated amplitude and only necessary rules*)
+bornRules = LoopRemove[born,rules];
+fullRules = LoopRemove[full,rules];
 Do[
   (*optimize the rules and write out*)
   optimizedRules[i] = LoopRemove[spinsum[i],rules];,
   {i, GluonLegs}
 ]
 
+Print["born = "];
+Print[born//.bornRules];
+
+Print["full = "];
+Print[full//.fullRules];
+
 Print["spinsum[4] = "];
 Print[spinsum[4]//.optimizedRules[4]];
 
-WriteSpinCorrelatedMatrixElement["bmunu_"<>name,spinsum[4],optimizedRules[4],4,4, NumericSum -> True]
+WriteSquaredMatrixElement["born_"<>name,born,bornRules,4,4,NumericSum->True]
+WriteSquaredMatrixElement["full_"<>name,full,fullRules,4,NumericSum->False]
+WriteSpinCorrelatedMatrixElement["bmunu_"<>name,spinsum[4],optimizedRules[4],4,4,NumericSum->True]
 
 
 Print["time used: ", SessionTime[] - time1]

@@ -154,7 +154,10 @@ DoPaint[ins, "born"];
 born = CalcFeynAmp[CreateFeynAmp[ins]];
 
 (*insert the partice widths*)
-born = born/.{Den[x_,y_]:>Den[x,y/.widths]}
+born = born/.{Den[x_,y_]:>Den[x,y/.widths]};
+
+Print["born ="];
+Print[born];
 
 
 (*Write files*)
@@ -163,8 +166,8 @@ amps = {born};
 
 col = ColourME[All, born];
 
-abbr = OptimizeAbbr[Abbr[]]
-subexpr = OptimizeAbbr[Subexpr[]]
+abbr = OptimizeAbbr[Abbr[]];
+subexpr = OptimizeAbbr[Subexpr[]];
 
 dir = SetupCodeDir[name<>"_born", Drivers -> name <> "_drivers"];
 WriteSquaredME[born, {}, col, abbr, subexpr, dir];

@@ -1,0 +1,346 @@
+	subroutine bmunu_ubaru_n1n2g(p,bmunu)
+	implicit none
+#include "PhysPars.h"
+	double precision pi
+	parameter (pi = 4.D0*datan(1.D0))
+	double precision p(0:3,5)
+	integer hels, helt
+	double complex es5(0:3), ecs5(0:3)
+	double complex et5(0:3), ect5(0:3)
+	integer alind, beind, i, j
+	double precision bmunu(0:3,0:3,5)
+	double complex k1(0:3)
+	double complex k2(0:3)
+	double complex k3(0:3)
+	double complex k4(0:3)
+	double complex k5(0:3)
+	double precision S, T, U, S34, T14, T24
+	integer Placeholder
+	double complex Sub102,Sub2,Sub1,Sub5,Pair15,Pair16,Eps29,Eps32
+	double complex Eps30,Sub174,Sub22,Sub181,Sub110,Pair11,Pair9
+	double complex Pair10,Pair12,Pair13,Pair14,Eps37,Eps31,Eps38
+	double complex Abb467,Abb460,Abb457,Abb456,Abb455,Abb491,Abb472
+	double complex Abb499,Abb470,Abb480,Abb502,Abb505,Sub99,Sub97
+	double complex Sub131,Sub143,Sub135,Sub100,Sub130,Sub11,Sub167
+	double complex Abb459,Abb452,Abb453,Abb469,Abb468,Sub177,Sub137
+	double complex Sub179,Sub113,Sub175,Sub104,Sub152,Sub106,Sub182
+	double complex Sub105,Sub176,Sub136,Sub170,Sub107,Sub180,Sub108
+	double complex Sub119,Sub109,Sub111,Eps33,Eps36,Eps34,Eps35
+	double complex Eps40,Eps39,Abb545,Abb540,Abb541,Abb465,Abb466
+	double complex Abb500,Abb486,Abb498,Abb487,Abb504,Abb463,Abb461
+	double complex Abb482,Abb510,Abb503,Abb492,Abb462,Abb549,Abb497
+	double complex Abb548,Abb546,Abb511,Abb550,Abb551,Abb528,Abb516
+	double complex Abb543,Abb481,Abb488,Abb493,Abb494,Abb464,Sub133
+	double complex Sub120,Sub92,Sub93,Sub9,Sub132,Sub98,Sub96
+	double complex Abb506,Abb483,Abb547,Abb542,Abb454,Sub153,Sub148
+	double complex Sub183,Sub165,Sub169,Sub134,Sub101,Sub147,Sub114
+	double complex Sub168,Abb507,Abb458,Sub172,Sub112,Sub171,Sub138
+	double complex Sub178,Sub103,Sub173,Sub139,Eps6,Eps45,Eps43
+	double complex Abb485,Abb534,Abb519,Abb512,Abb526,Abb523,Abb517
+	double complex Abb532,Abb552,Abb538,Abb518,Abb471,Abb531,Abb474
+	double complex Abb520,Sub163,Sub67,Sub6,Abb490,Abb501,Abb539
+	double complex Abb473,Abb513,Sub155,Sub122,Sub164,Sub118,Sub117
+	double complex Sub187,Sub184,Sub149,Sub121,Sub150,Sub156,Eps42
+	double complex Eps41,Eps50,Eps49,Abb536,Abb484,Abb509,Abb535
+	double complex Abb508,Abb533,Abb529,Abb530,Abb514,Abb475,Abb524
+	double complex Abb476,Abb489,Abb537,Abb544,Abb495,Sub94,Sub161
+	double complex Sub128,Sub166,Sub160,Abb515,Abb525,Abb496,Sub144
+	double complex Sub140,Sub189,Sub95,Sub129,Sub162,Sub123,Sub188
+	double complex Sub141,Sub190,Sub145,Sub115,Sub154,Sub146,Sub142
+	double complex Sub116,Sub151,Sub185,Sub186,Sub157,Sub158,Sub159
+	double complex Eps54,Eps53,Eps52,Eps51,Eps48,Eps47,Eps46,Eps44
+	double complex Opt150,Opt151,Abb521,Abb522,Abb527,Sub191,Sub192
+	double complex Sub193,Sub194,Abb477,Abb478,Abb479,Sub124,Sub125
+	double complex Sub126,Sub127
+
+	double precision Epsilonk, DotP, Den, Kronecker
+	double precision momsq, momsum2sq, momsum3sq
+	double complex cDotP
+	external Epsilonk, DotP, Den, Kronecker
+	external momsq, momsum2sq, momsum3sq
+	external cDotP
+
+	bmunu(:,:,:) = 0D0
+	S   = momsum2sq(p(:,1), p(:,2))
+	T   = momsum2sq(p(:,1),-p(:,3))
+	U   = momsum2sq(p(:,2),-p(:,3))
+	S34 = momsum2sq(p(:,3), p(:,4))
+	T14 = momsum2sq(p(:,1),-p(:,4))
+	T24 = momsum2sq(p(:,2),-p(:,4))
+
+	do i=0,3
+	k1(i) = dcmplx(p(i,1))
+	k2(i) = dcmplx(p(i,2))
+	k3(i) = dcmplx(p(i,3))
+	k4(i) = dcmplx(p(i,4))
+	k5(i) = dcmplx(p(i,5))
+	enddo
+
+	do alind=0,3
+	do beind=0,3
+	do hels=-1,1,2
+	do helt=-1,1,2
+
+	call polvector(dreal(k5), hels, es5)
+	call polvector(dreal(k5), helt, et5)
+	ecs5(:) = dconjg(es5(:))
+	ect5(:) = dconjg(et5(:))
+
+      <* Sub102 *> = <* Sub102$2084 *>
+      <* Sub2 *> = <* Sub2$2085 *>
+      <* Sub1 *> = <* Sub1$2086 *>
+      <* Sub5 *> = <* Sub5$2087 *>
+      <* Pair15 *> = <* Pair15$2088 *>
+      <* Pair16 *> = <* Pair16$2089 *>
+      <* Eps29 *> = <* Eps29$2090 *>
+      <* Eps32 *> = <* Eps32$2091 *>
+      <* Eps30 *> = <* Eps30$2092 *>
+      <* Sub174 *> = <* Sub174$2093 *>
+      <* Sub22 *> = <* Sub22$2094 *>
+      <* Sub181 *> = <* Sub181$2095 *>
+      <* Sub110 *> = <* Sub110$2096 *>
+      <* Pair11 *> = <* Pair11$2097 *>
+      <* Pair9 *> = <* Pair9$2098 *>
+      <* Pair10 *> = <* Pair10$2099 *>
+      <* Pair12 *> = <* Pair12$2100 *>
+      <* Pair13 *> = <* Pair13$2101 *>
+      <* Pair14 *> = <* Pair14$2102 *>
+      <* Eps37 *> = <* Eps37$2103 *>
+      <* Eps31 *> = <* Eps31$2104 *>
+      <* Eps38 *> = <* Eps38$2105 *>
+      <* Abb467 *> = <* Abb467$2106 *>
+      <* Abb460 *> = <* Abb460$2107 *>
+      <* Abb457 *> = <* Abb457$2108 *>
+      <* Abb456 *> = <* Abb456$2109 *>
+      <* Abb455 *> = <* Abb455$2110 *>
+      <* Abb491 *> = <* Abb491$2111 *>
+      <* Abb472 *> = <* Abb472$2112 *>
+      <* Abb499 *> = <* Abb499$2113 *>
+      <* Abb470 *> = <* Abb470$2114 *>
+      <* Abb480 *> = <* Abb480$2115 *>
+      <* Abb502 *> = <* Abb502$2116 *>
+      <* Abb505 *> = <* Abb505$2117 *>
+      <* Sub99 *> = <* Sub99$2118 *>
+      <* Sub97 *> = <* Sub97$2119 *>
+      <* Sub131 *> = <* Sub131$2120 *>
+      <* Sub143 *> = <* Sub143$2121 *>
+      <* Sub135 *> = <* Sub135$2122 *>
+      <* Sub100 *> = <* Sub100$2123 *>
+      <* Sub130 *> = <* Sub130$2124 *>
+      <* Sub11 *> = <* Sub11$2125 *>
+      <* Sub167 *> = <* Sub167$2126 *>
+      <* Abb459 *> = <* Abb459$2127 *>
+      <* Abb452 *> = <* Abb452$2128 *>
+      <* Abb453 *> = <* Abb453$2129 *>
+      <* Abb469 *> = <* Abb469$2130 *>
+      <* Abb468 *> = <* Abb468$2131 *>
+      <* Sub177 *> = <* Sub177$2132 *>
+      <* Sub137 *> = <* Sub137$2133 *>
+      <* Sub179 *> = <* Sub179$2134 *>
+      <* Sub113 *> = <* Sub113$2135 *>
+      <* Sub175 *> = <* Sub175$2136 *>
+      <* Sub104 *> = <* Sub104$2137 *>
+      <* Sub152 *> = <* Sub152$2138 *>
+      <* Sub106 *> = <* Sub106$2139 *>
+      <* Sub182 *> = <* Sub182$2140 *>
+      <* Sub105 *> = <* Sub105$2141 *>
+      <* Sub176 *> = <* Sub176$2142 *>
+      <* Sub136 *> = <* Sub136$2143 *>
+      <* Sub170 *> = <* Sub170$2144 *>
+      <* Sub107 *> = <* Sub107$2145 *>
+      <* Sub180 *> = <* Sub180$2146 *>
+      <* Sub108 *> = <* Sub108$2147 *>
+      <* Sub119 *> = <* Sub119$2148 *>
+      <* Sub109 *> = <* Sub109$2149 *>
+      <* Sub111 *> = <* Sub111$2150 *>
+      <* Eps33 *> = <* Eps33$2151 *>
+      <* Eps36 *> = <* Eps36$2152 *>
+      <* Eps34 *> = <* Eps34$2153 *>
+      <* Eps35 *> = <* Eps35$2154 *>
+      <* Eps40 *> = <* Eps40$2155 *>
+      <* Eps39 *> = <* Eps39$2156 *>
+      <* Abb545 *> = <* Abb545$2157 *>
+      <* Abb540 *> = <* Abb540$2158 *>
+      <* Abb541 *> = <* Abb541$2159 *>
+      <* Abb465 *> = <* Abb465$2160 *>
+      <* Abb466 *> = <* Abb466$2161 *>
+      <* Abb500 *> = <* Abb500$2162 *>
+      <* Abb486 *> = <* Abb486$2163 *>
+      <* Abb498 *> = <* Abb498$2164 *>
+      <* Abb487 *> = <* Abb487$2165 *>
+      <* Abb504 *> = <* Abb504$2166 *>
+      <* Abb463 *> = <* Abb463$2167 *>
+      <* Abb461 *> = <* Abb461$2168 *>
+      <* Abb482 *> = <* Abb482$2169 *>
+      <* Abb510 *> = <* Abb510$2170 *>
+      <* Abb503 *> = <* Abb503$2171 *>
+      <* Abb492 *> = <* Abb492$2172 *>
+      <* Abb462 *> = <* Abb462$2173 *>
+      <* Abb549 *> = <* Abb549$2174 *>
+      <* Abb497 *> = <* Abb497$2175 *>
+      <* Abb548 *> = <* Abb548$2176 *>
+      <* Abb546 *> = <* Abb546$2177 *>
+      <* Abb511 *> = <* Abb511$2178 *>
+      <* Abb550 *> = <* Abb550$2179 *>
+      <* Abb551 *> = <* Abb551$2180 *>
+      <* Abb528 *> = <* Abb528$2181 *>
+      <* Abb516 *> = <* Abb516$2182 *>
+      <* Abb543 *> = <* Abb543$2183 *>
+      <* Abb481 *> = <* Abb481$2184 *>
+      <* Abb488 *> = <* Abb488$2185 *>
+      <* Abb493 *> = <* Abb493$2186 *>
+      <* Abb494 *> = <* Abb494$2187 *>
+      <* Abb464 *> = <* Abb464$2188 *>
+      <* Sub133 *> = <* Sub133$2189 *>
+      <* Sub120 *> = <* Sub120$2190 *>
+      <* Sub92 *> = <* Sub92$2191 *>
+      <* Sub93 *> = <* Sub93$2192 *>
+      <* Sub9 *> = <* Sub9$2193 *>
+      <* Sub132 *> = <* Sub132$2194 *>
+      <* Sub98 *> = <* Sub98$2195 *>
+      <* Sub96 *> = <* Sub96$2196 *>
+      <* Abb506 *> = <* Abb506$2197 *>
+      <* Abb483 *> = <* Abb483$2198 *>
+      <* Abb547 *> = <* Abb547$2199 *>
+      <* Abb542 *> = <* Abb542$2200 *>
+      <* Abb454 *> = <* Abb454$2201 *>
+      <* Sub153 *> = <* Sub153$2202 *>
+      <* Sub148 *> = <* Sub148$2203 *>
+      <* Sub183 *> = <* Sub183$2204 *>
+      <* Sub165 *> = <* Sub165$2205 *>
+      <* Sub169 *> = <* Sub169$2206 *>
+      <* Sub134 *> = <* Sub134$2207 *>
+      <* Sub101 *> = <* Sub101$2208 *>
+      <* Sub147 *> = <* Sub147$2209 *>
+      <* Sub114 *> = <* Sub114$2210 *>
+      <* Sub168 *> = <* Sub168$2211 *>
+      <* Abb507 *> = <* Abb507$2212 *>
+      <* Abb458 *> = <* Abb458$2213 *>
+      <* Sub172 *> = <* Sub172$2214 *>
+      <* Sub112 *> = <* Sub112$2215 *>
+      <* Sub171 *> = <* Sub171$2216 *>
+      <* Sub138 *> = <* Sub138$2217 *>
+      <* Sub178 *> = <* Sub178$2218 *>
+      <* Sub103 *> = <* Sub103$2219 *>
+      <* Sub173 *> = <* Sub173$2220 *>
+      <* Sub139 *> = <* Sub139$2221 *>
+      <* Eps6 *> = <* Eps6$2222 *>
+      <* Eps45 *> = <* Eps45$2223 *>
+      <* Eps43 *> = <* Eps43$2224 *>
+      <* Abb485 *> = <* Abb485$2225 *>
+      <* Abb534 *> = <* Abb534$2226 *>
+      <* Abb519 *> = <* Abb519$2227 *>
+      <* Abb512 *> = <* Abb512$2228 *>
+      <* Abb526 *> = <* Abb526$2229 *>
+      <* Abb523 *> = <* Abb523$2230 *>
+      <* Abb517 *> = <* Abb517$2231 *>
+      <* Abb532 *> = <* Abb532$2232 *>
+      <* Abb552 *> = <* Abb552$2233 *>
+      <* Abb538 *> = <* Abb538$2234 *>
+      <* Abb518 *> = <* Abb518$2235 *>
+      <* Abb471 *> = <* Abb471$2236 *>
+      <* Abb531 *> = <* Abb531$2237 *>
+      <* Abb474 *> = <* Abb474$2238 *>
+      <* Abb520 *> = <* Abb520$2239 *>
+      <* Sub163 *> = <* Sub163$2240 *>
+      <* Sub67 *> = <* Sub67$2241 *>
+      <* Sub6 *> = <* Sub6$2242 *>
+      <* Abb490 *> = <* Abb490$2243 *>
+      <* Abb501 *> = <* Abb501$2244 *>
+      <* Abb539 *> = <* Abb539$2245 *>
+      <* Abb473 *> = <* Abb473$2246 *>
+      <* Abb513 *> = <* Abb513$2247 *>
+      <* Sub155 *> = <* Sub155$2248 *>
+      <* Sub122 *> = <* Sub122$2249 *>
+      <* Sub164 *> = <* Sub164$2250 *>
+      <* Sub118 *> = <* Sub118$2251 *>
+      <* Sub117 *> = <* Sub117$2252 *>
+      <* Sub187 *> = <* Sub187$2253 *>
+      <* Sub184 *> = <* Sub184$2254 *>
+      <* Sub149 *> = <* Sub149$2255 *>
+      <* Sub121 *> = <* Sub121$2256 *>
+      <* Sub150 *> = <* Sub150$2257 *>
+      <* Sub156 *> = <* Sub156$2258 *>
+      <* Eps42 *> = <* Eps42$2259 *>
+      <* Eps41 *> = <* Eps41$2260 *>
+      <* Eps50 *> = <* Eps50$2261 *>
+      <* Eps49 *> = <* Eps49$2262 *>
+      <* Abb536 *> = <* Abb536$2263 *>
+      <* Abb484 *> = <* Abb484$2264 *>
+      <* Abb509 *> = <* Abb509$2265 *>
+      <* Abb535 *> = <* Abb535$2266 *>
+      <* Abb508 *> = <* Abb508$2267 *>
+      <* Abb533 *> = <* Abb533$2268 *>
+      <* Abb529 *> = <* Abb529$2269 *>
+      <* Abb530 *> = <* Abb530$2270 *>
+      <* Abb514 *> = <* Abb514$2271 *>
+      <* Abb475 *> = <* Abb475$2272 *>
+      <* Abb524 *> = <* Abb524$2273 *>
+      <* Abb476 *> = <* Abb476$2274 *>
+      <* Abb489 *> = <* Abb489$2275 *>
+      <* Abb537 *> = <* Abb537$2276 *>
+      <* Abb544 *> = <* Abb544$2277 *>
+      <* Abb495 *> = <* Abb495$2278 *>
+      <* Sub94 *> = <* Sub94$2279 *>
+      <* Sub161 *> = <* Sub161$2280 *>
+      <* Sub128 *> = <* Sub128$2281 *>
+      <* Sub166 *> = <* Sub166$2282 *>
+      <* Sub160 *> = <* Sub160$2283 *>
+      <* Abb515 *> = <* Abb515$2284 *>
+      <* Abb525 *> = <* Abb525$2285 *>
+      <* Abb496 *> = <* Abb496$2286 *>
+      <* Sub144 *> = <* Sub144$2287 *>
+      <* Sub140 *> = <* Sub140$2288 *>
+      <* Sub189 *> = <* Sub189$2289 *>
+      <* Sub95 *> = <* Sub95$2290 *>
+      <* Sub129 *> = <* Sub129$2291 *>
+      <* Sub162 *> = <* Sub162$2292 *>
+      <* Sub123 *> = <* Sub123$2293 *>
+      <* Sub188 *> = <* Sub188$2294 *>
+      <* Sub141 *> = <* Sub141$2295 *>
+      <* Sub190 *> = <* Sub190$2296 *>
+      <* Sub145 *> = <* Sub145$2297 *>
+      <* Sub115 *> = <* Sub115$2298 *>
+      <* Sub154 *> = <* Sub154$2299 *>
+      <* Sub146 *> = <* Sub146$2300 *>
+      <* Sub142 *> = <* Sub142$2301 *>
+      <* Sub116 *> = <* Sub116$2302 *>
+      <* Sub151 *> = <* Sub151$2303 *>
+      <* Sub185 *> = <* Sub185$2304 *>
+      <* Sub186 *> = <* Sub186$2305 *>
+      <* Sub157 *> = <* Sub157$2306 *>
+      <* Sub158 *> = <* Sub158$2307 *>
+      <* Sub159 *> = <* Sub159$2308 *>
+      <* Eps54 *> = <* Eps54$2309 *>
+      <* Eps53 *> = <* Eps53$2310 *>
+      <* Eps52 *> = <* Eps52$2311 *>
+      <* Eps51 *> = <* Eps51$2312 *>
+      <* Eps48 *> = <* Eps48$2313 *>
+      <* Eps47 *> = <* Eps47$2314 *>
+      <* Eps46 *> = <* Eps46$2315 *>
+      <* Eps44 *> = <* Eps44$2316 *>
+      <* Opt150 *> = <* Opt150$2317 *>
+      <* Opt151 *> = <* Opt151$2318 *>
+      <* Abb521 *> = <* Abb521$2319 *>
+      <* Abb522 *> = <* Abb522$2320 *>
+      <* Abb527 *> = <* Abb527$2321 *>
+      <* Sub191 *> = <* Sub191$2322 *>
+      <* Sub192 *> = <* Sub192$2323 *>
+      <* Sub193 *> = <* Sub193$2324 *>
+      <* Sub194 *> = <* Sub194$2325 *>
+      <* Abb477 *> = <* Abb477$2326 *>
+      <* Abb478 *> = <* Abb478$2327 *>
+      <* Abb479 *> = <* Abb479$2328 *>
+      <* Sub124 *> = <* Sub124$2329 *>
+      <* Sub125 *> = <* Sub125$2330 *>
+      <* Sub126 *> = <* Sub126$2331 *>
+      <* Sub127 *> = <* Sub127$2332 *>
+
+	bmunu(alind,beind,5) = bmunu(alind,beind,5) + dreal(<* FormCalc`AmpMuNuOut1 *>)
+
+	enddo
+	enddo
+	enddo
+	enddo
+
+	end

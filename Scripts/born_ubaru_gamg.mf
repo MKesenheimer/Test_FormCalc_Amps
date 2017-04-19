@@ -1,0 +1,61 @@
+	subroutine born_ubaru_gamg(p,born)
+	implicit none
+#include "PhysPars.h"
+	double precision pi
+	parameter (pi = 4.D0*datan(1.D0))
+	double precision p(0:3,4)
+	integer hel
+	double complex e4(0:3), ec4(0:3)
+	integer i, j
+	double precision born
+	double complex k1(0:3)
+	double complex k2(0:3)
+	double complex k3(0:3)
+	double complex k4(0:3)
+	double precision S, T, U
+	integer Placeholder
+	double complex Pair10,Pair13,Pair9,Pair5,Pair6,Pair1,Abb57
+	double complex Abb58,Abb59,Abb55,Abb53,Abb54,Abb56,Sub1
+
+	double precision Epsilonk, DotP, Den, Kronecker
+	double precision momsq, momsum2sq, momsum3sq
+	double complex cDotP
+	external Epsilonk, DotP, Den, Kronecker
+	external momsq, momsum2sq, momsum3sq
+	external cDotP
+
+	born = 0D0
+	S   = momsum2sq(p(:,1), p(:,2))
+	T   = momsum2sq(p(:,1),-p(:,3))
+	U   = momsum2sq(p(:,2),-p(:,3))
+
+	do i=0,3
+	k1(i) = dcmplx(p(i,1))
+	k2(i) = dcmplx(p(i,2))
+	k3(i) = dcmplx(p(i,3))
+	k4(i) = dcmplx(p(i,4))
+	enddo
+	do hel=-1,1,2
+
+	call polvector(dreal(k4), hel, e4)
+	ec4(:) = dconjg(e4(:))
+
+      <* Pair10 *> = <* Pair10$957 *>
+      <* Pair13 *> = <* Pair13$958 *>
+      <* Pair9 *> = <* Pair9$959 *>
+      <* Pair5 *> = <* Pair5$960 *>
+      <* Pair6 *> = <* Pair6$961 *>
+      <* Pair1 *> = <* Pair1$962 *>
+      <* Abb57 *> = <* Abb57$963 *>
+      <* Abb58 *> = <* Abb58$964 *>
+      <* Abb59 *> = <* Abb59$965 *>
+      <* Abb55 *> = <* Abb55$966 *>
+      <* Abb53 *> = <* Abb53$967 *>
+      <* Abb54 *> = <* Abb54$968 *>
+      <* Abb56 *> = <* Abb56$969 *>
+      <* Sub1 *> = <* Sub1$970 *>
+
+	born = born + dreal(<* FormCalc`AmpOut1 *>)
+	enddo
+
+	end

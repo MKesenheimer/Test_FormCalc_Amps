@@ -48,6 +48,7 @@ c############### Main.F ################################################
           
           ! test the spin correlated amplitude
           !call bmunu_ubaru_gamg(p,bmunu)
+          call bmunu_ubaru_n1n2g(p,bmunu)
           bmunu(:,:,:) = bmunu(:,:,:) / 9.
           print*,"bmunu(0) = ", bmunu(0,:,5)
           print*,"bmunu(1) = ", bmunu(1,:,5)

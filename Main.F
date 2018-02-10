@@ -1,8 +1,11 @@
+c Copyright (C) Matthias Kesenheimer - All Rights Reserved
+c Written by Matthias Kesenheimer <m.kesenheimer@gmx.net>, 2017
+
 c############### Main.F ################################################
       program main
         implicit none
         integer nlegborn,ndiminteg
-        parameter (nlegborn=5)
+        parameter (nlegborn=4)
         parameter (ndiminteg=(nlegborn-1)*3-4+2-1)
         double precision p(0:3,nlegborn)
         double precision xborn(ndiminteg-3)
@@ -18,15 +21,20 @@ c############### Main.F ################################################
         !flav(2) = 2
         !flav(3) = -2
         !flav(4) = 2
+        !flav(1) = -2
+        !flav(2) = 2
+        !flav(3) = 1000022
+        !flav(4) = 1000023
+        !flav(5) = 0
+        ! ubar u -> gam g
         flav(1) = -2
         flav(2) = 2
-        flav(3) = 1000022
-        flav(4) = 1000023
-        flav(5) = 0
+        flav(3) = 22
+        flav(4) = 0
 
         call init_couplings
         
-        do i=1,5
+        do i=1,15
           ! choose a point
           do j=1,ndiminteg-3
             xborn(j) = rand()
@@ -47,14 +55,14 @@ c############### Main.F ################################################
           print*,"born = ", amp1
           
           ! test the spin correlated amplitude
-          !call bmunu_ubaru_gamg(p,bmunu)
-          call bmunu_ubaru_n1n2g(p,bmunu)
+          call bmunu_ubaru_gamg(p,bmunu)
+          !call bmunu_ubaru_n1n2g(p,bmunu)
           bmunu(:,:,:) = bmunu(:,:,:) / 9.
-          print*,"bmunu(0) = ", bmunu(0,:,5)
-          print*,"bmunu(1) = ", bmunu(1,:,5)
-          print*,"bmunu(2) = ", bmunu(2,:,5)
-          print*,"bmunu(3) = ", bmunu(3,:,5)
-          print*,"gmunu*bmunu = ",bmunu(0,0,5)-bmunu(1,1,5)-bmunu(2,2,5)-bmunu(3,3,5)
+          print*,"bmunu(0) = ", bmunu(0,:,4)
+          print*,"bmunu(1) = ", bmunu(1,:,4)
+          print*,"bmunu(2) = ", bmunu(2,:,4)
+          print*,"bmunu(3) = ", bmunu(3,:,4)
+          print*,"gmunu*bmunu = ",bmunu(0,0,4)-bmunu(1,1,4)-bmunu(2,2,4)-bmunu(3,3,4)
         enddo  
       end
 c############### end Main ##############################################
@@ -89,7 +97,7 @@ c############### subroutine getAmps ####################################
         implicit none
 #include "PhysPars.h"
         integer nlegborn,ndiminteg
-        parameter (nlegborn=5)
+        parameter (nlegborn=4)
         parameter (ndiminteg=(nlegborn-1)*3-4+2-1)
         double precision p(0:3,nlegborn)
         ! helicity and flags parameter for formcalc       
@@ -108,8 +116,8 @@ c############### subroutine getAmps ####################################
         ! process parameters
         ! unpolarized fermion: B01010  FC8Guid.pdf p.49
         ! unpolarized gluon: B01110
-        !helicities = 338382
-        helicities = 10824014
+        helicities = 338382
+        !helicities = 10824014
         flags = 2 ! = 010d, Bit0: set mass, Bit1: reset, Bit2: loop
         symfac = 36
         ! set the formCalc vectors

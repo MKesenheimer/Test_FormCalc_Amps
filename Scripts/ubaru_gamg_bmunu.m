@@ -1,9 +1,10 @@
 (* ::Package:: *)
 
 (*
-generates the Fortran code for
-p p -> weakino weakino jet in the MSSM
-last modified July 2016
+SpinCorr Test.
+
+Copyright (C) Matthias Kesenheimer - All Rights Reserved
+Written by Matthias Kesenheimer <m.kesenheimer@gmx.net>, 2017
 *)
 
 

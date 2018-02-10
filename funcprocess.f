@@ -198,6 +198,8 @@ c pick SUSY masses relevant for specific initial state
             stop
           case(0) ! gluon
             M(i) = 0D0
+          case(22) ! photon
+            M(i) = 0D0
           case(1000022)
             M(i) = MNeu(1)
             Neu(i) = 1
@@ -258,6 +260,9 @@ c convert the powheg flavor string to an character string
           case(0)
             str(lstr+1:lstr+1) = "g"
             lstr = lstr + 1
+          case(22)
+            str(lstr+1:lstr+3) = "gam"
+            lstr = lstr + 3
           case(-1)
             str(lstr+1:lstr+4) = "dbar"
             lstr = lstr + 4

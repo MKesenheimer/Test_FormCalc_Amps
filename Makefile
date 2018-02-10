@@ -127,9 +127,10 @@ AMPS_F := $(wildcard $(SUBWORKINGDIR)/squaredme/*.F)
 AMPS := $(notdir $(AMPS_F:.F=.o))
 
 ### Main Files ###
-MAIN = Main.o funcprocess.o funcbasic.o VecSet.o phi1_2.o Born_phsp_4.o Born_phsp_5.o\
-	init_couplings.o boostrot.o \
-	bmunu_ubaru_gamg.o bmunu_ubaru_n1n2g.o $(AMPS)
+MAIN = Main.o funcprocess.o funcbasic.o VecSet.o phsp_routines.o Born_phsp_4.o Born_phsp_5.o\
+	init_couplings.o boostrot.o $(AMPS) \
+	bmunu_ubaru_gamg.o 
+#bmunu_ubaru_n1n2g.o
 
 ########################################################################
 ## Libraries

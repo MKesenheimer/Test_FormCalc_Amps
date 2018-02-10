@@ -7,8 +7,8 @@ EXE =
 DEF = -D
 UNDERSCORE = 1
 
-FC = gfortran
-FFLAGS = -O0 -g -ffixed-line-length-none -ff2c -Wall -Wtabs   -DU77EXT=0
+FC = f77
+FFLAGS = -O0 -g -ffixed-line-length-none -Wall   -DU77EXT=0
 
 CC = gcc
 CFLAGS = -O3 -g -fomit-frame-pointer -ffast-math -Wall  -m64
